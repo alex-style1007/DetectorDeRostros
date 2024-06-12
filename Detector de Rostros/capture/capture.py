@@ -1,10 +1,12 @@
 import cv2
 import os
 import imutils
-from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QImage, QPixmap
 
 class FaceRecognizer:
-    def __init__(self, max_images_per_person=300):
+    def __init__(self, max_images_per_person=100):
         self.max_images_per_person = max_images_per_person
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
@@ -15,17 +17,22 @@ class FaceRecognizer:
             os.makedirs(person_path)
         return person_path
 
-    def capture_images(self, person_name, data_path):
+    def capture_images(self, person_name, data_path, label):
         count = 0
         person_path = self.create_person_folder(person_name, data_path)
 
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        # cap = cv2.VideoCapture('Video.mp4')
+        cap = cv2.VideoCapture(0)
+
+        if not cap.isOpened():
+            print("Error: No se puede acceder a la cámara.")
+            return
 
         while True:
             ret, frame = cap.read()
-            if ret == False:
+            if not ret:
+                print("Error: No se pudo obtener el fotograma.")
                 break
+
             frame = imutils.resize(frame, width=640)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -40,16 +47,10 @@ class FaceRecognizer:
                 if count >= self.max_images_per_person:
                     cap.release()
                     cv2.destroyAllWindows()
-                    return
+                    return  # Termina la captura cuando se alcanza el límite
 
-            cv2.imshow('frame', frame)
-
-            k = cv2.waitKey(1)
-            if k == 27 or count >= self.max_images_per_person:
+            if count >= self.max_images_per_person:
                 break
-
-        cap.release()
-        cv2.destroyAllWindows()
 
 def main():
     try:
@@ -60,10 +61,21 @@ def main():
         app = QApplication([])
         data_path = QFileDialog.getExistingDirectory(None, "Seleccione la carpeta Data", ".", QFileDialog.ShowDirsOnly)
 
+        # Configurar la ventana para mostrar los fotogramas
+        window = QWidget()
+        window.setWindowTitle('Captura de Rostros')
+        layout = QVBoxLayout()
+        label = QLabel()
+        layout.addWidget(label)
+        window.setLayout(layout)
+        window.show()
+
         for i in range(num_people):
             person_name, _ = QInputDialog.getText(None, "Registro de Persona", "Ingrese el nombre de la persona {} a registrar: ".format(i + 1))
-            recognizer.capture_images(person_name, data_path)
+            recognizer.capture_images(person_name, data_path, label)
             print("Registro de {} completado.".format(person_name))
+
+        app.exec_()
 
     except ValueError:
         print("Error: Ingrese un número válido para el número de personas.")
