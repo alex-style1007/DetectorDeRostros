@@ -5,7 +5,7 @@ class FacialRecognition:
     def __init__(self):
         self.face_recognizer = cv2.face.LBPHFaceRecognizer_create()
         self.faceClassif = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_frontalface_default.xml')
-        self.dataPath = 'C:/Users/Gaby/Desktop/Reconocimiento Facial/Data' #Cambia a la ruta donde hayas almacenado Data
+        self.dataPath = "ruta donde se almaceno trining"
         self.imagePaths = os.listdir(self.dataPath)
         # Leer el modelo
         self.face_recognizer.read('modeloLBPHFace.xml')
